@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Welcome to AWS IAM Credentials Broker</title>
+    <link th:rel="stylesheet" th:href="@{/webjars/bootstrap/4.5.0/css/bootstrap.min.css} "/>
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-dark bg-warning static-top">
+    <div class="container">
+        <a class="navbar-brand" href="/">
+            AWS IAM Credentials Broker
+            <!--<img th:src="@{/aws.png}"src="aws.png"/> Credentials Broker-->
+        </a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarResponsive"
+                aria-controls="navbarResponsive"
+                aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarResponsive">
+            <ul class="navbar-nav ml-auto">
+                <li class="nav-item">
+                    <!--<a class="nav-link" th:href="@{/logout}">Logout</a>-->
+                    <a class="nav-link" th:href="@{/credentials/manager}">Login</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+<div class="container d-flex h-100 flex-column">
+    <div class="flex-grow-1"></div>
+    <div class="row justify-content-center">
+        <div class="col-4">
+            <div class="card">
+                <div class="card-header">Welcome to the AWS credentials Manager</div>
+                <div class="card-body">
+                    <a type="button" class="btn btn-block btn-outline-warning" th:href="@{/credentials/manager}">
+                        Login Using Keycloak
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>
