@@ -84,9 +84,7 @@ public class ControlRoom {
 
         List<String> roleNames = securedUserDetails.getArnRoles()
                 .stream().filter(r->r.startsWith("arn:aws:iam::"))
-                .map(r -> {
-                    return r.split("/")[1];
-                })
+                .map(r -> r.split("/")[1])
                 .collect(Collectors.toList());
 
         securedUserDetails.setAwsRoleNames(roleNames);
