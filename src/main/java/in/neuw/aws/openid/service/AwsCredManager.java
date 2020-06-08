@@ -46,6 +46,12 @@ public class AwsCredManager {
     @Value("${AWS_DEFAULT_STS_DURATION}")
     private Integer AWS_DEFAULT_STS_DURATION;
 
+    /**
+     * Returns the sign in Url for the console
+     * @param securityContext
+     * @param roleArn
+     * @return
+     */
     @SneakyThrows
     public String getSignInUrl(final KeycloakSecurityContext securityContext, final String roleArn) {
         Credentials credentials = getCredentials(securityContext, roleArn);
@@ -90,6 +96,12 @@ public class AwsCredManager {
         return loginURL;
     }
 
+    /**
+     * Returns the Credentials for the assumed role
+     * @param securityContext
+     * @param roleArn
+     * @return
+     */
     public Credentials getCredentials(final KeycloakSecurityContext securityContext, final String roleArn) {
         return getResponse(securityContext, roleArn).credentials();
     }
@@ -101,6 +113,8 @@ public class AwsCredManager {
 
     private AssumeRoleWithWebIdentityRequest request(final KeycloakSecurityContext securityContext, final String roleArn) {
 
+        // this might be redundant as we are going to fetch the role using the get role API
+        // & will use the duration from there only
         int duration = AWS_DEFAULT_STS_DURATION;
 
         if(roleArn.startsWith("arn:aws:iam::")) {

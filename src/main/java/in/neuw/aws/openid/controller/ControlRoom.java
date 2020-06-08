@@ -28,15 +28,24 @@ public class ControlRoom {
     @Autowired
     private AwsCredManager credManager;
 
+    /**
+     * Endpoint to expose the roles and preferred username of the loggedin user
+     * @param request
+     * @return
+     */
     @GetMapping("/aws/what/can/i/assume")
     @ResponseBody
-    public SecuredUserDetails getUser(final Model model, final HttpServletRequest request) {
+    public SecuredUserDetails getUser(final HttpServletRequest request) {
         SecuredUserDetails securedUserDetails = configCommonAttributes(request);
         log.info("securedUserDetails are : {}", securedUserDetails);
-        model.addAttribute("securityDetails", securedUserDetails);
         return securedUserDetails;
     }
 
+    /**
+     * Endpoint to expose the index page, if logged in redirect to the /credentials/manager dashboard
+     * @param request
+     * @return
+     */
     @GetMapping({"/","","/index"})
     public String indexRedirect(final HttpServletRequest request) {
         if(getKeycloakSecurityContext(request) != null) {
@@ -45,6 +54,12 @@ public class ControlRoom {
         return "index";
     }
 
+    /**
+     * Exposes the credentials manager page for the logged in User
+     * @param model
+     * @param request
+     * @return
+     */
     @GetMapping("/credentials/manager")
     public String credentialsManager(final Model model, final HttpServletRequest request) {
         SecuredUserDetails securedUserDetails = configCommonAttributes(request);
@@ -53,12 +68,24 @@ public class ControlRoom {
         return "credentials_landing";
     }
 
+    /**
+     * API endpoint to get the signed url for the AWS web console for the selected role by the user
+     * @param request
+     * @param selectedRoleArn
+     * @return
+     */
     @GetMapping("/get/aws/sign-in/url")
     @ResponseBody
     public String getSignInUrl(final HttpServletRequest request, @RequestParam("role_arn") String selectedRoleArn) {
         return credManager.getSignInUrl(getKeycloakSecurityContext(request), selectedRoleArn);
     }
 
+    /**
+     * API endpoint to get the credentials for the selected role by the user
+     * @param request
+     * @param selectedRoleArn
+     * @return
+     */
     @GetMapping("/get/aws/credentials")
     @ResponseBody
     public AwsCredentialsResponse getAwsCredentials(final HttpServletRequest request, @RequestParam("role_arn") String selectedRoleArn) {
@@ -70,12 +97,23 @@ public class ControlRoom {
         return response;
     }
 
+    /**
+     * Logout endpoint for the user
+     * @param request
+     * @return
+     * @throws ServletException
+     */
     @GetMapping(value = "/logout")
     public String logout(final HttpServletRequest request) throws ServletException {
         request.logout();
         return "redirect:/";
     }
 
+    /**
+     * The private function to get the logged in user's details
+     * @param request
+     * @return
+     */
     private SecuredUserDetails configCommonAttributes(final HttpServletRequest request) {
         KeycloakSecurityContext securityContext = getKeycloakSecurityContext(request);
         SecuredUserDetails securedUserDetails = new SecuredUserDetails();
@@ -93,6 +131,12 @@ public class ControlRoom {
         return securedUserDetails;
     }
 
+    /**
+     * The private function to get the logged user's context
+     * TODO store the context in the session attribute!
+     * @param request
+     * @return
+     */
     private KeycloakSecurityContext getKeycloakSecurityContext(HttpServletRequest request) {
         return (KeycloakSecurityContext) request.getAttribute(KeycloakSecurityContext.class.getName());
     }
