@@ -49,7 +49,7 @@ public class KeycloakSecurityConfig extends KeycloakWebSecurityConfigurerAdapter
         http
                 .authorizeRequests()
                 .antMatchers("/credentials/manager","/aws/what/can/i/assume","/get/aws/sign-in/url","/get/aws/credentials").authenticated()
-                .antMatchers("/","/index","/**/*.css","/*.css","/**/*.js","/**.js").permitAll()
+                .antMatchers("/","/index","/**/*.css","/*.css","/**/*.js","/**.js","/favicon.ico").permitAll()
                 .anyRequest().authenticated();
     }
 
