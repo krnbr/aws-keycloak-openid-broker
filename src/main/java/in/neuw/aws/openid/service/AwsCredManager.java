@@ -34,6 +34,12 @@ public class AwsCredManager {
     @Autowired
     private IamClient iamClient;
 
+    @Autowired
+    private IamClient iamClientAssumed;
+
+    @Value("${aws.default.account.id}")
+    private String awsDefaultAccountID;
+
     @Value("${AWS_SIGN_IN_URL}")
     private String SIGN_IN_URL;
 
@@ -46,6 +52,9 @@ public class AwsCredManager {
     @Value("${AWS_DEFAULT_STS_DURATION}")
     private Integer AWS_DEFAULT_STS_DURATION;
 
+    @Value("${server.return.url}")
+    private String SERVER_RETURN_URL;
+
     /**
      * Returns the sign in Url for the console
      * @param securityContext
@@ -55,6 +64,9 @@ public class AwsCredManager {
     @SneakyThrows
     public String getSignInUrl(final KeycloakSecurityContext securityContext, final String roleArn) {
         Credentials credentials = getCredentials(securityContext, roleArn);
+
+        int duration = getSessionDuration(roleArn);
+
         String sessionJson = String.format(
                 "{\"%1$s\":\"%2$s\",\"%3$s\":\"%4$s\",\"%5$s\":\"%6$s\"}",
                 "sessionId", credentials.accessKeyId(),
@@ -62,7 +74,7 @@ public class AwsCredManager {
                 "sessionToken", credentials.sessionToken());
         String getSigninTokenURL = SIGN_IN_URL +
                 "?Action=getSigninToken" +
-                "&DurationSeconds=43200" +
+                "&DurationSeconds=100" +
                 "&SessionType=json&Session=" +
                 URLEncoder.encode(sessionJson,"UTF-8");
         System.out.println(getSigninTokenURL);
@@ -83,7 +95,7 @@ public class AwsCredManager {
         // The issuer parameter is optional, but recommended. Use it to direct users
         // to your sign-in page when their session expires.
 
-        String issuerParameter = "&Issuer=" + URLEncoder.encode(ISSUER_URL, "UTF-8");
+        String issuerParameter = "&Issuer=" + URLEncoder.encode(SERVER_RETURN_URL, "UTF-8");
 
         // Finally, present the completed URL for the AWS console session to the user
 
@@ -115,15 +127,11 @@ public class AwsCredManager {
 
         // this might be redundant as we are going to fetch the role using the get role API
         // & will use the duration from there only
-        int duration = AWS_DEFAULT_STS_DURATION;
+        int duration = getSessionDuration(roleArn);
 
-        if(roleArn.startsWith("arn:aws:iam::")) {
-            String roleName = roleArn.split("/")[1];
-            GetRoleResponse response = getRole(roleName);
-            duration = response.role().maxSessionDuration();
-        }
+        AssumeRoleWithWebIdentityRequest.Builder builder = AssumeRoleWithWebIdentityRequest.builder();
 
-        return AssumeRoleWithWebIdentityRequest.builder().roleArn(roleArn)
+        return builder.roleArn(roleArn)
                 .roleSessionName(securityContext.getIdToken().getPreferredUsername())
                 .webIdentityToken(securityContext.getIdTokenString())
                 .durationSeconds(duration).build();
@@ -134,6 +142,34 @@ public class AwsCredManager {
                 .roleName(roleArn)
                 .build();
         return iamClient.getRole(request);
+    }
+
+    private GetRoleResponse getRoleOtherAccount(final String roleArn) {
+        GetRoleRequest request = GetRoleRequest.builder()
+                .roleName(roleArn)
+                .build();
+        return iamClientAssumed.getRole(request);
+    }
+
+    private Integer getSessionDuration (String roleArn) {
+
+        int duration = AWS_DEFAULT_STS_DURATION;
+
+        if(roleArn.startsWith("arn:aws:iam::"+awsDefaultAccountID)) {
+            String roleName = roleArn.split("/")[1];
+            GetRoleResponse response = getRole(roleName);
+            duration = response.role().maxSessionDuration();
+        }
+
+        // else if other accounts - call the different sts client for getting the roles from the other account, for now only one secondary account
+        else if (roleArn.startsWith("arn:aws:iam::")){
+            String roleName = roleArn.split("/")[1];
+            GetRoleResponse response = getRoleOtherAccount(roleName);
+            duration = response.role().maxSessionDuration();
+        } // else defaults to AWS_DEFAULT_STS_DURATION
+
+        return duration;
+
     }
 
 }
